@@ -1,0 +1,40 @@
+FROM python:3.11-slim
+
+# Create a non-root user
+RUN groupadd -r botuser && useradd -r -g botuser botuser
+
+# Install system dependencies including ffmpeg
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first to leverage Docker cache
+COPY src/requirements.txt /app/requirements.txt
+COPY ./src/music_bot.py /app/src/music_bot.py
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application
+COPY . /app/
+
+# Create directory for temporary files and set permissions
+RUN mkdir -p /app/temp && \
+    chmod -R 755 /app/src && \
+    chown -R botuser:botuser /app
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV FFMPEG_PATH=/usr/bin/ffmpeg
+
+RUN chmod +x /app/src/music_bot.py
+
+# Switch to non-root user
+USER botuser
+
+# Run bot
+CMD ["python", "src/music_bot.py"]

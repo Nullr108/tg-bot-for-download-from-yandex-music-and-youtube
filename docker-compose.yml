@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  music-bot:
+    user: "root"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - BOT_TOKEN=
+      - YANDEX_TOKEN=
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+    volumes:
+      - ./src:/app/src
+      - ./.env:/app/.env:ro
+      - ./cookies.txt:/app/cookies.txt
+    working_dir: /app
+    restart: unless-stopped
+    command: python src/music_bot.py
+
+networks:
+  default:
+    driver: bridge
