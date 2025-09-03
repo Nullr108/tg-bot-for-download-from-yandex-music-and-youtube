@@ -1,12 +1,16 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bullseye
 
 # Create a non-root user
 RUN groupadd -r botuser && useradd -r -g botuser botuser
 
 # Install system dependencies including ffmpeg
-RUN apt-get update && \
+RUN echo "deb http://mirror.yandex.ru/debian bullseye main" > /etc/apt/sources.list && \
+    echo "deb http://mirror.yandex.ru/debian-security bullseye-security main" >> /etc/apt/sources.list && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     ffmpeg \
+    gnupg \
+    software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
