@@ -59,11 +59,12 @@ To download content from YouTube and Yandex Music that requires authentication, 
 
 1. Install the "Get cookies.txt" extension for your browser:
    - [Chrome/Edge Extension](https://chrome.google.com/webstore/detail/get-cookiestxt/bgaddhkoddajcdgocldbbfleckgcbcid)
+   - [Chrome/Edge Extension alternative](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
    - [Firefox Extension](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/)
 
 2. Visit YouTube and/or Yandex Music while logged in
 3. Use the extension to export cookies for these domains
-4. Save the exported cookies as `cookies.txt` in the project root directory
+4. Save the exported cookies as NETSCAPE `cookies.txt` in the project root directory
 
 The Docker setup will automatically use these cookies for authentication.
 
