@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   music-bot:
-    user: "root"
+    user: "botuser"
     build:
       context: .
       dockerfile: Dockerfile
