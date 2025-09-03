@@ -7,6 +7,7 @@ import asyncio
 import shutil
 
 import yt_dlp
+from youtube_downloader import YouTubeDownloader
 from yandex_music import Client
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -29,7 +30,7 @@ def get_ffmpeg_path():
             return ffmpeg_path
         
     # Default Windows path
-    return r"C:\Program Files (x86)\ffmpeg-2025-04-23-git-25b0a8e295-full_build\bin\ffmpeg.exe"
+    return r"C:\Program Files (x86)\ffmpeg-2025-08-25-git-1b62f9d3ae-full_build\bin\ffmpeg.exe"
 
 FFMPEG_PATH = get_ffmpeg_path()
 
@@ -58,8 +59,30 @@ COOKIES_FILE = Path("cookies.txt")  # Path to the cookies file
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
+# Initialize YouTube downloader
+youtube_downloader = YouTubeDownloader(
+    ffmpeg_path=FFMPEG_PATH,
+    cookies_path=str(COOKIES_FILE) if COOKIES_FILE.exists() else None
+)
+
 async def download_youtube_audio(url: str, output_dir: Path) -> Path:
     """Downloads audio from YouTube and returns the file path"""
+    loop = asyncio.get_event_loop()
+    
+    # First get video info to check duration
+    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
+        
+        if info.get('duration', 0) > 300:  # 5 minutes = 300 seconds
+            # Use chunked downloader for long videos
+            try:
+                filename = await youtube_downloader.download(url, output_dir)
+                return filename.with_suffix('.mp3')
+            except Exception as e:
+                print(f"YouTube chunked download error: {str(e)}")
+                raise Exception(f"Failed to download audio: {str(e)}")
+        
+    # Use standard download for short videos
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': str(output_dir / '%(title)s.%(ext)s'),
@@ -69,11 +92,12 @@ async def download_youtube_audio(url: str, output_dir: Path) -> Path:
             'preferredquality': '192',
         }],
         'quiet': True,
-        'extractor_retries': 3,
-        'fragment_retries': 3,
+        'extractor_retries': 5,
+        'fragment_retries': 5,
         'skip_download_archive': True,
         'no_warnings': True,
-        'ffmpeg_location': FFMPEG_PATH
+        'ffmpeg_location': FFMPEG_PATH,
+        'socket_timeout': 300
     }
 
     if COOKIES_FILE.exists():
@@ -81,8 +105,6 @@ async def download_youtube_audio(url: str, output_dir: Path) -> Path:
         print(f"Using cookies file: {COOKIES_FILE}")
 
     try:
-        # Run YouTube-DL in a thread pool to avoid blocking
-        loop = asyncio.get_event_loop()
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=True))
             filename = ydl.prepare_filename(info).replace('.webm', '.mp3').replace('.m4a', '.mp3')
@@ -105,11 +127,19 @@ async def download_yandex_track(track_id: str, album_id: str, output_dir: Path) 
 
 def extract_yandex_ids(url: str) -> tuple:
     """Extracts track and album IDs from Yandex Music URL"""
-    pattern = r"album/(\d+)/track/(\d+)"
-    match = re.search(pattern, url)
-    if match:
-        album_id, track_id = match.groups()
-        return track_id, album_id
+    patterns = [
+        r"album/(\d+)/track/(\d+)",  # Старый формат
+        r"track/(\d+)"               # Новый формат
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            if len(match.groups()) == 2:
+                return match.group(2), match.group(1)  # track_id, album_id
+            else:
+                # Для формата track/{id} нужно получить album_id из API
+                return match.group(1), None
     return None, None
 
 @dp.message(Command("start"))
@@ -135,9 +165,14 @@ async def handle_yandex_url(message: types.Message):
         msg = await message.reply("⏳ Начинаю загрузку трека с Яндекс.Музыки...")
         track_id, album_id = extract_yandex_ids(url)
         
-        if not track_id or not album_id:
+        if not track_id:
             await message.reply("❌ Неверный формат ссылки на Яндекс.Музыку")
             return
+            
+        if not album_id:
+            # Получаем информацию о треке через API
+            track = yandex_client.tracks(track_id)[0]
+            album_id = track.albums[0].id
             
         audio_path = await download_yandex_track(track_id, album_id, user_dir)
         
