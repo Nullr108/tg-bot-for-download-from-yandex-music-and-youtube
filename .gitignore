@@ -1,0 +1,15 @@
+# Игнорировать конфиденциальные файлы
+.env
+cookies.txt
+
+# Дополнительные системные/редакторские файлы (опционально)
+.DS_Store
+.idea/
+.vscode/
+*.log
+tmp/
+temp/
+node_modules/
+__pycache__/
+*.swp
+venv/
