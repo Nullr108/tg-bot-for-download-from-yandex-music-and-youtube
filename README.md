@@ -10,6 +10,7 @@ music-bot
 │   ├── music_bot.py        # Main code for the music bot application
 │   └── requirements.txt     # Python dependencies
 ├── .env                     # Environment variables
+├── cookie.txt               # cookie for youtube in netscape format
 ├── .dockerignore            # Files to ignore when building the Docker image
 ├── docker-compose.yml       # Docker services configuration
 ├── Dockerfile               # Instructions for building the Docker image
