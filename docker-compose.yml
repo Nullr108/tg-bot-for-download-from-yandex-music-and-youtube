@@ -7,8 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - BOT_TOKEN=7930103119:AAFgiu4QDnRWGqTXUXdmMlk8BDl3bntLA8U
-      - YANDEX_TOKEN=y0__xCs5eOKBBje-AYgq7f29xIwxJiN3Qe0KqAoHN2_iMKERLez1Mtoxjc5zg
+      - BOT_TOKEN=
+      - YANDEX_TOKEN=
       - FFMPEG_PATH=/usr/bin/ffmpeg
     volumes:
       - ./src:/app/src
