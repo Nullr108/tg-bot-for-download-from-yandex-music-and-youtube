@@ -29,8 +29,10 @@ COPY . /app/
 # Create directory for temporary files and set permissions
 RUN mkdir -p /app/temp && \
     chmod -R 755 /app/src && \
-    chown -R botuser:botuser /app
-
+    if id "botuser" &>/dev/null 2>&1; then \
+        chown -R botuser:botuser /app; \
+        echo "Changed ownership to botuser"; \
+    fi
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV FFMPEG_PATH=/usr/bin/ffmpeg
