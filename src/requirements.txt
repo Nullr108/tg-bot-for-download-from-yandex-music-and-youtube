@@ -1,4 +1,4 @@
 aiogram==3.20.0
-yt-dlp==2025.3.31
+yt-dlp
 yandex-music==2.2.0
 python-dotenv==1.0.0

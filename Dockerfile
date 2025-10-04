@@ -1,7 +1,7 @@
 FROM python:3.11-slim-bullseye
 
 # Create a non-root user
-RUN groupadd -r botuser && useradd -r -g botuser botuser
+RUN groupadd -r botuser && useradd -r -m -g botuser botuser
 
 # Install system dependencies including ffmpeg
 RUN echo "deb http://mirror.yandex.ru/debian bullseye main" > /etc/apt/sources.list && \
@@ -26,10 +26,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . /app/
 
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+RUN chown botuser:botuser /app/cookies.txt && chmod 644 /app/cookies.txt
+
 # Create directory for temporary files and set permissions
 RUN mkdir -p /app/temp && \
     chmod -R 755 /app/src && \
-    chown -R botuser:botuser /app
+    chown -R botuser:botuser /app && \
+    chmod 755 /home/botuser
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -41,4 +47,4 @@ RUN chmod +x /app/src/music_bot.py
 USER botuser
 
 # Run bot
-CMD ["python", "src/music_bot.py"]
+CMD ["./entrypoint.sh", "python", "src/music_bot.py"]
